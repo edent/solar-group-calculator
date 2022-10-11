@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+	<head>
+		<meta charset="utf-8">
+		<title>Solar Group Buy</title>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.2/dist/leaflet.css"
+			integrity="sha256-sA+zWATbFveLLNqWO2gtiw3HL/lh1giY/Inf1BJ0z14="
+			crossorigin=""/>
+		<style>
+			#map {
+				height: 600px;
+				width:  100%;
+			 }
+		</style>
+		<style>
+			body {
+				color: #000000;
+				background-color: aliceblue;
+
+			}
+			.column {
+			  flex: 50%;
+			  max-width: 50%;
+			  height: 200px;
+			  padding: 10px;
+			  margin: 5px;
+			  background-color: #cccccc;
+			  text-align: center;
+			}
+			.container {
+				display: flex;
+				background-color: aliceblue;
+
+			}
+			button {
+				font-size: 2em;
+			}
+			#totalSolarkWh, #totalInstallations {
+				font-size: 1.5em;
+				width: 6em;
+			}
+			#resultGroup {
+				flex-direction:column;
+				min-width: 50%
+			  
+			}
+			#signUp{
+				text-decoration: underline;
+			}
+			.success, .warning {
+				font-size: 1em;
+				display: none;
+			}
+			.button1{
+				display: inline;
+			}
+			h2 {
+				padding-bottom: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="column">
+				<div id="map"></div>
+				<!-- <input type="number" id="points" name="points" min="-90" max="90" step="5" onchange="updateAngle(this)"> -->
+				<button type="button" name="button" onclick="listing()">Calculate Power!</button>
+			</div>
+			<div class="container card" id="resultGroup">
+				<h2>Number of Installations <input type="number" name="" id="totalInstallations" disabled></h2>
+				<h2>Together, you will generate:<input type="number" name="" id="totalSolarkWh" disabled> kWh</h2>
+				<button type="button" name="savingsButton" onclick="savings()">Calculate Savings!</button>
+				<h2>Everyone will reduce yearly pollution by:	<button class="warning" id="totalCO2"></span></h2>
+				<h2>How much money will you make as a group each year?</h2>
+				<h2>Sold back to the grid: <button class='success' id="soldDisplay"></button></h2>
+				<h2>Reduced usage during the day:  <button class='success' id="savingsDisplay"></button></h2>
+				<h2>Total group savings:  <button class='success' id="totalDisplay"></button></h2>
+				<h2><a href="" id="signUp"></a></h2>
+
+				<small>Assuming: 4kWp installation per property, south facing aspect, £0.50/kWh import, £0.25/kWh export.</small>
+			</div>
+		</div>
+		<script src="https://unpkg.com/leaflet@1.9.2/dist/leaflet.js"
+	           integrity="sha256-o9N1jGDZrf5tS+Ft4gbIK7mYMipq9lqpVJ91xHSyKhg="
+	           crossorigin=""></script>
+		<script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
+
+		<script type="text/javascript">
+			var map = L.map('map').setView([52.4832967,-1.9357897], 19);
+
+			var ESRI_api_token = "ADD ME!!!!!";
+			var ESRI_Satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.jpeg?token=' + ESRI_api_token, {
+					minZoom: 2,
+					maxNativeZoom: 19,
+					maxZoom: 22,
+					attribution: '© <a href="https://www.esri.com/">i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community</a>',
+					id: 'esri.satellite'
+				});
+			ESRI_Satellite.addTo(map);
+
+			var lineBlackIcon = L.icon({
+				iconUrl: 'panel-icon.png',
+				iconSize:     [64, 64], // size of the icon
+				iconAnchor:   [31, 31] // point of the icon which will correspond to marker's location
+			});
+
+
+			function onMapClick(e) {
+				L.marker(e.latlng, {draggable:'true', autoPan:'true', icon: lineBlackIcon}).addTo(map);
+				console.log("You added a marker at " + e.latlng);
+			}
+
+			map.on('click', onMapClick);
+
+			function getAllMarkers(map) {
+				var markerList = [];
+				map.eachLayer(function(layer) {
+					if (layer instanceof L.Marker) {
+						markerList.push(layer);
+					}
+ 				});
+			return markerList;
+			}
+
+			function updateAngle(input) {
+				markers = getAllMarkers(map);
+				markers.forEach(function(m) {
+					m.setRotationAngle(input.value);
+				});
+			}
+
+			function listing() {
+				markers = getAllMarkers(map);
+				document.getElementById("totalInstallations").value = markers.length;
+				solarTotal = 0;
+				markers.forEach(function(m) {
+					lat    = m["_latlng"]["lat"];
+					lng    = m["_latlng"]["lng"];
+					aspect = 22;
+					proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+					solar_api_url = 'https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat='+lat+'&lon='+lng+'&aspect='+aspect+'&peakpower=4&raddatabase=PVGIS-SARAH2&outputformat=json&pvtechchoice=crystSi&loss=14&mountingplace=free&angle=35';
+					fetch(solar_api_url)
+						.then(response => response.json())
+						.then(commits =>
+							solarTotal += commits["outputs"]["totals"]["fixed"]["E_y"]							
+						).then(output => document.getElementById("totalSolarkWh").value = solarTotal.toFixed())
+				});
+			}
+
+			function savings() {
+				kWh = document.getElementById("totalSolarkWh").value;
+				kWhToCO2 = .256;
+				co2 = kWh * kWhToCO2;
+				importPrice = .50;
+				exportPrice = .25;
+				exportPercentage = .5;
+				importPercentage = 1 - exportPercentage;
+				exportTotal = kWh * exportPercentage * exportPrice;
+				importTotal = kWh * importPercentage * importPrice;
+				totalSaving = importTotal + exportTotal;
+				console.log("Total savings = " + totalSaving);
+
+				document.getElementById("soldDisplay").innerHTML = new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(exportTotal);
+				document.getElementById("soldDisplay").classList.add('button1');
+				document.getElementById("soldDisplay").style.animation = "15s";
+
+				document.getElementById("savingsDisplay").innerHTML = Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(importTotal);
+				document.getElementById("savingsDisplay").classList.add('button1');
+
+				document.getElementById("totalDisplay").innerHTML = Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(totalSaving);
+				document.getElementById("totalDisplay").classList.add('button1');
+
+				document.getElementById("totalCO2").innerHTML = co2.toFixed().toLocaleString('en-GB') + " tons of CO₂";
+				document.getElementById("totalCO2").classList.add('button1');
+
+				document.getElementById("signUp").innerHTML = "Sign Up With Your Community Today!";
+			}
+		</script>
+	</body>
+</html>
