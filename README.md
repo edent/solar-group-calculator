@@ -4,7 +4,7 @@ Last week, I attended [BrumPropHack](https://twitter.com/search?q=BrumPropHack&s
 
 My demo was reasonably simple and (I thought) quite effective.  It displayed a satellite view of a street in the local area. By clicking on rooftops, virtual solar panels are added to properties. Click a button and it shows your community how much CO<sub>2</sub> they will save, and how much money they will make.
 
-<img src="https://shkspr.mobi/blog/wp-content/uploads/2022/10/proptechhack.jpg" alt="Screenshot of the demo page. A street is covered in solar panel icons." width="1200" height="649" class="aligncenter size-full wp-image-43677" />
+<img src="https://shkspr.mobi/blog/wp-content/uploads/2022/10/proptechhack.jpg" alt="Screenshot of the demo page. A street is covered in solar panel icons." />
 
 The demo worked (phew!) and received good feedback. For something built in a couple of hours, I'm pretty pleased with it.  The way it works is...
 
